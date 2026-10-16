@@ -1,0 +1,4 @@
+#!/bin/sh
+INIT="/opt/etc/init.d/S52usque-gui"
+[ -x "$INIT" ] && "$INIT" stop
+exit 0

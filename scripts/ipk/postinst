@@ -1,0 +1,8 @@
+#!/bin/sh
+INIT="/opt/etc/init.d/S52usque-gui"
+mkdir -p /opt/etc/usque-gui
+chmod 700 /opt/etc/usque-gui
+[ -x "$INIT" ] && "$INIT" restart
+echo "usque-gui установлен: http://<адрес-роутера>:2223"
+echo "При первом входе будет предложено задать пароль."
+exit 0

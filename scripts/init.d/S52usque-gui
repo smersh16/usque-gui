@@ -1,0 +1,58 @@
+#!/bin/sh
+# usque-gui: веб-интерфейс для usque-keenetic
+
+PATH=/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+NAME="usque-gui"
+BIN="/opt/usr/bin/usque-gui"
+PIDFILE="/opt/var/run/usque-gui.pid"
+LOGFILE="/opt/var/log/usque-gui.log"
+
+is_running() {
+    [ -f "$PIDFILE" ] || return 1
+    pid=$(cat "$PIDFILE" 2>/dev/null)
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+do_start() {
+    if is_running; then
+        echo "$NAME уже запущен"
+        return 0
+    fi
+    mkdir -p /opt/var/run /opt/var/log /opt/etc/usque-gui
+    echo "Запуск $NAME..."
+    # sh делает exec, поэтому pid в pidfile — это pid самого usque-gui
+    start-stop-daemon -S -b -m -p "$PIDFILE" -x /bin/sh -- -c "exec $BIN >>$LOGFILE 2>&1"
+    sleep 1
+    if is_running; then
+        echo "$NAME запущен"
+    else
+        echo "Не удалось запустить $NAME, см. $LOGFILE" >&2
+        rm -f "$PIDFILE"
+        return 1
+    fi
+}
+
+do_stop() {
+    if ! is_running; then
+        echo "$NAME не запущен"
+        rm -f "$PIDFILE"
+        return 0
+    fi
+    echo "Остановка $NAME..."
+    start-stop-daemon -K -p "$PIDFILE"
+    rm -f "$PIDFILE"
+}
+
+case "$1" in
+start) do_start ;;
+stop) do_stop ;;
+restart) do_stop; do_start ;;
+status)
+    if is_running; then echo "$NAME запущен (PID $(cat "$PIDFILE"))"; else echo "$NAME остановлен"; fi
+    ;;
+*)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+    ;;
+esac
