@@ -4,6 +4,8 @@ const $ = (id) => document.getElementById(id);
 let busy = false;
 let pollTimer = null;
 let cfgDirty = false;
+let hasSession = false;
+let wasRunning = false;
 
 async function api(method, path, body) {
   const opts = { method, headers: { "X-Requested-With": "usque-gui" } };
@@ -92,6 +94,7 @@ function showApp() {
   loadConfig();
   refresh();
   loadLog();
+  loadVersions();
   clearInterval(pollTimer);
   pollTimer = setInterval(() => { if (!busy && !document.hidden) refresh(); }, 5000);
 }
@@ -149,11 +152,18 @@ function renderStatus(res) {
   $("btn-stop").disabled = busy || !st.running;
   $("btn-restart").disabled = busy || !st.initFound;
   $("btn-check").disabled = busy || !st.running;
-  $("btn-reset").disabled = busy || st.running || !st.hasSession;
-  $("btn-register").disabled = busy || st.hasSession;
+  hasSession = st.hasSession;
+  wasRunning = st.running;
+  $("btn-reset").disabled = busy || !st.hasSession;
+  $("btn-register").disabled = busy || !st.initFound;
+  $("btn-register").textContent = st.hasSession ? "Перерегистрировать" : "Зарегистрировать";
   $("sess-text").textContent = st.hasSession
-    ? "Сессия есть. Сброс удалит ключи устройства: при следующем запуске usque зарегистрирует новый аккаунт."
+    ? "Аккаунт WARP зарегистрирован, сессия сохранена."
     : "Сессии нет. Она создаётся автоматически при первом запуске или кнопкой ниже.";
+  $("sess-hint").textContent = st.hasSession
+    ? "«Перерегистрировать» и «Сбросить» заменяют ключи устройства; запущенный сервис будет остановлен" +
+      " (после перерегистрации — запущен снова)."
+    : "";
 }
 
 async function refresh() {
@@ -210,10 +220,83 @@ const svc = (action) => () => api("POST", "/api/service", { action });
 $("btn-start").onclick = () => act("Запуск", svc("start"));
 $("btn-stop").onclick = () => act("Остановка", svc("stop"));
 $("btn-restart").onclick = () => act("Перезапуск", svc("restart"));
-$("btn-register").onclick = () => act("Регистрация", () => api("POST", "/api/session/register", {}));
+$("btn-register").onclick = () => {
+  if (!hasSession) return act("Регистрация", () => api("POST", "/api/session/register", {}));
+  if (!confirm("Заменить аккаунт WARP новым?" + (wasRunning ? " Сервис будет перезапущен." : ""))) return;
+  act("Перерегистрация", () => api("POST", "/api/session/renew", {}));
+};
 $("btn-reset").onclick = () => {
-  if (!confirm("Удалить сессию WARP? При следующем запуске будет создан новый аккаунт.")) return;
+  if (!confirm("Удалить сессию WARP?" + (wasRunning ? " Сервис будет остановлен." : "") +
+    " При следующем запуске usque создаст новый аккаунт.")) return;
   act("Сброс сессии", () => api("POST", "/api/session/reset", {}));
+};
+
+// ---------- версии и обновления ----------
+function renderVersions(v) {
+  const box = $("versions");
+  box.textContent = "";
+  (v.packages || []).forEach((p) => {
+    const row = document.createElement("div");
+    row.className = "ver";
+    const left = document.createElement("div");
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = p.name;
+    const info = document.createElement("div");
+    info.className = "info";
+    let t = "установлена: " + (p.installed || "неизвестно");
+    if (p.binaryVersion) t += " · бинарник usque " + p.binaryVersion;
+    if (p.upgradable) t += " · доступна: " + p.available;
+    info.textContent = t;
+    left.append(name, info);
+
+    const right = document.createElement("div");
+    right.className = "row";
+    if (p.upgradable) {
+      const tag = document.createElement("span");
+      tag.className = "tag new";
+      tag.textContent = "есть обновление";
+      right.appendChild(tag);
+      if (p.canUpgrade) {
+        const b = document.createElement("button");
+        b.textContent = "Обновить";
+        b.onclick = () => {
+          if (!confirm("Обновить " + p.name + " до " + p.available + "? Сервис будет перезапущен.")) return;
+          act("Обновление " + p.name, async () => {
+            await api("POST", "/api/updates/upgrade", { package: p.name });
+            await loadVersions();
+          });
+        };
+        right.appendChild(b);
+      } else if (p.upgradeHint) {
+        const c = document.createElement("code");
+        c.textContent = p.upgradeHint;
+        right.appendChild(c);
+      }
+    } else if (v.checkedAt) {
+      const tag = document.createElement("span");
+      tag.className = "tag ok";
+      tag.textContent = "актуальная";
+      right.appendChild(tag);
+    }
+    row.append(left, right);
+    box.appendChild(row);
+  });
+  $("upd-msg").textContent = (v.checkedAt ? "Проверено: " + new Date(v.checkedAt).toLocaleString() + ". " : "Ещё не проверялось. ") +
+    (v.warning || "");
+}
+
+async function loadVersions() {
+  try { renderVersions(await api("GET", "/api/versions")); } catch (_) { /* ignore */ }
+}
+
+$("btn-upd-check").onclick = async () => {
+  const b = $("btn-upd-check");
+  b.disabled = true;
+  $("upd-msg").textContent = "Проверяю (opkg update)…";
+  try { renderVersions(await api("POST", "/api/updates/check", {})); }
+  catch (e) { $("upd-msg").textContent = e.message; }
+  finally { b.disabled = false; loadLog(); }
 };
 
 $("btn-check").onclick = async () => {

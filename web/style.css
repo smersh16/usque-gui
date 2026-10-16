@@ -68,3 +68,13 @@ input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transpare
 .toast.bad { background: var(--bad); color: #fff; }
 @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr; gap: 0; }
   .facts dt { margin-top: 8px; } }
+
+.vers { display: grid; gap: 10px; }
+.ver { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.ver .name { font-weight: 600; }
+.ver .info { color: var(--muted); font-size: 13px; }
+.ver .tag { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.ver .tag.new { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.ver .tag.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.ver code { font: 12.5px ui-monospace, Menlo, monospace; background: var(--line); padding: 1px 6px; border-radius: 4px; }

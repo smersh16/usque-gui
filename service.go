@@ -105,7 +105,11 @@ func (s *Service) Control(ctx context.Context, action string) (string, error) {
 		return "", errBusy
 	}
 	defer s.busy.Unlock()
+	return s.control(ctx, action)
+}
 
+// control — Control без захвата busy (вызывающий уже держит его).
+func (s *Service) control(ctx context.Context, action string) (string, error) {
 	if !fileExists(s.paths.InitScript) {
 		return "", errors.New("init-скрипт usque-keenetic не найден: " + s.paths.InitScript)
 	}
@@ -122,9 +126,12 @@ func (s *Service) Register(ctx context.Context) (string, error) {
 		return "", errBusy
 	}
 	defer s.busy.Unlock()
+	return s.register(ctx)
+}
 
+func (s *Service) register(ctx context.Context) (string, error) {
 	if fileExists(s.paths.Session) {
-		return "", errors.New("сессия уже существует; сначала сбросьте её")
+		return "", errors.New("сессия уже существует; воспользуйтесь перерегистрацией")
 	}
 	if !fileExists(s.paths.UsqueBin) {
 		return "", errors.New("бинарник usque не найден: " + s.paths.UsqueBin)
@@ -140,22 +147,56 @@ func (s *Service) Register(ctx context.Context) (string, error) {
 	return out, err
 }
 
-// ResetSession удаляет session.conf; только при остановленном сервисе.
-func (s *Service) ResetSession() error {
+// ResetSession удаляет session.conf; запущенный сервис предварительно
+// останавливается (иначе usque держит ключи в памяти).
+func (s *Service) ResetSession(ctx context.Context) error {
 	if !s.busy.TryLock() {
 		return errBusy
 	}
 	defer s.busy.Unlock()
+	_, err := s.dropSession(ctx)
+	return err
+}
 
+// dropSession: остановить сервис (если запущен) и удалить сессию.
+// Возвращает, был ли сервис запущен.
+func (s *Service) dropSession(ctx context.Context) (wasRunning bool, err error) {
 	if _, alive := processAlive(s.paths.PidFile, s.paths.UsqueBin); alive {
-		return errors.New("остановите сервис перед сбросом сессии")
+		wasRunning = true
+		if _, err := s.control(ctx, "stop"); err != nil {
+			return true, fmt.Errorf("не удалось остановить сервис: %w", err)
+		}
 	}
 	if err := os.Remove(s.paths.Session); err != nil && !os.IsNotExist(err) {
 		s.addLog("reset-session", false, err.Error())
-		return err
+		return wasRunning, err
 	}
-	s.addLog("reset-session", true, "session.conf удалён; при следующем запуске usque зарегистрирует новый аккаунт")
-	return nil
+	s.addLog("reset-session", true, "session.conf удалён")
+	return wasRunning, nil
+}
+
+// Renew: сброс сессии и регистрация нового аккаунта; сервис, если был
+// запущен, поднимается снова.
+func (s *Service) Renew(ctx context.Context) (string, error) {
+	if !s.busy.TryLock() {
+		return "", errBusy
+	}
+	defer s.busy.Unlock()
+
+	wasRunning, err := s.dropSession(ctx)
+	if err != nil {
+		return "", err
+	}
+	out, err := s.register(ctx)
+	if err != nil {
+		return out, err
+	}
+	if wasRunning {
+		if o, err := s.control(ctx, "start"); err != nil {
+			return out + "\n" + o, fmt.Errorf("аккаунт создан, но сервис не запустился: %w", err)
+		}
+	}
+	return out, nil
 }
 
 type CheckResult struct {

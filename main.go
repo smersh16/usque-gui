@@ -63,7 +63,7 @@ func main() {
 		Handler:           NewApp(p, auth).Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      3 * time.Minute, // register/restart могут быть долгими
+		WriteTimeout:      6 * time.Minute, // register/restart/opkg upgrade могут быть долгими
 		IdleTimeout:       60 * time.Second,
 	}
 

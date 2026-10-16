@@ -89,6 +89,10 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("PUT /api/config", a.guard(true, a.handlePutConfig))
 	mux.HandleFunc("POST /api/session/register", a.guard(true, a.handleRegister))
 	mux.HandleFunc("POST /api/session/reset", a.guard(true, a.handleReset))
+	mux.HandleFunc("POST /api/session/renew", a.guard(true, a.handleRenew))
+	mux.HandleFunc("GET /api/versions", a.guard(true, a.handleVersions))
+	mux.HandleFunc("POST /api/updates/check", a.guard(true, a.handleUpdatesCheck))
+	mux.HandleFunc("POST /api/updates/upgrade", a.guard(true, a.handleUpgrade))
 	mux.HandleFunc("POST /api/check", a.guard(true, a.handleCheck))
 	mux.HandleFunc("GET /api/log", a.guard(true, a.handleLog))
 	return mux
@@ -228,11 +232,20 @@ func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleReset(w http.ResponseWriter, r *http.Request) {
-	if err := a.svc.ResetSession(); err != nil {
+	if err := a.svc.ResetSession(r.Context()); err != nil {
 		writeErr(w, 409, err.Error())
 		return
 	}
 	writeJSON(w, 200, map[string]bool{"ok": true})
+}
+
+func (a *App) handleRenew(w http.ResponseWriter, r *http.Request) {
+	out, err := a.svc.Renew(r.Context())
+	if err != nil {
+		writeJSON(w, 500, map[string]string{"error": err.Error(), "output": out})
+		return
+	}
+	writeJSON(w, 200, map[string]any{"ok": true, "output": out})
 }
 
 func (a *App) handleCheck(w http.ResponseWriter, r *http.Request) {
@@ -246,4 +259,31 @@ func (a *App) handleCheck(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) handleLog(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, a.svc.Log())
+}
+
+func (a *App) handleVersions(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, 200, a.versions(r.Context()))
+}
+
+func (a *App) handleUpdatesCheck(w http.ResponseWriter, r *http.Request) {
+	info, err := a.checkUpdates(r.Context())
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, info)
+}
+
+func (a *App) handleUpgrade(w http.ResponseWriter, r *http.Request) {
+	var in struct{ Package string }
+	if err := decode(r, &in); err != nil {
+		writeErr(w, 400, "некорректный запрос")
+		return
+	}
+	out, err := a.upgradePkg(r.Context(), in.Package)
+	if err != nil {
+		writeJSON(w, 500, map[string]string{"error": err.Error(), "output": out})
+		return
+	}
+	writeJSON(w, 200, map[string]any{"ok": true, "output": out})
 }
