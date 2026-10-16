@@ -153,6 +153,7 @@ function renderStatus(res) {
   $("btn-restart").disabled = busy || !st.initFound;
   $("btn-check").disabled = busy || !st.running;
   hasSession = st.hasSession;
+  $("sess-edit").hidden = !st.hasSession;
   wasRunning = st.running;
   $("btn-reset").disabled = busy || !st.hasSession;
   $("btn-register").disabled = busy || !st.initFound;
@@ -230,6 +231,39 @@ $("btn-reset").onclick = () => {
     " При следующем запуске usque создаст новый аккаунт.")) return;
   act("Сброс сессии", () => api("POST", "/api/session/reset", {}));
 };
+
+// ---------- конфигурация сессии ----------
+const SESS_PLAIN = ["endpoint_v4", "endpoint_v6", "endpoint_h2_v4", "endpoint_h2_v6", "ipv4", "ipv6", "id", "endpoint_pub_key"];
+const SESS_SECRET = ["private_key", "access_token"];
+
+async function loadSession() {
+  try {
+    const v = await api("GET", "/api/session");
+    $("sess-edit").hidden = !v.exists;
+    if (!v.exists) return;
+    SESS_PLAIN.forEach((k) => { $("s-" + k).value = (v.config && v.config[k]) || ""; });
+    SESS_SECRET.forEach((k) => {
+      const set = v.config && v.config[k];
+      $("s-" + k).value = "";
+      $("s-" + k).placeholder = set ? "•••••••• (задан, не менять)" : "не задан";
+    });
+    $("sess-msg").textContent = "";
+  } catch (e) { $("sess-msg").textContent = e.message; }
+}
+
+$("sess-edit").addEventListener("toggle", () => { if ($("sess-edit").open) loadSession(); });
+$("sess-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const body = {};
+  SESS_PLAIN.forEach((k) => { body[k] = $("s-" + k).value.trim(); });
+  SESS_SECRET.forEach((k) => { body[k] = $("s-" + k).value.trim(); });
+  try {
+    await api("PUT", "/api/session", body);
+    toast("Сессия сохранена");
+    await loadSession();
+    refresh(); loadLog();
+  } catch (e) { $("sess-msg").textContent = e.message; toast(e.message, true); }
+});
 
 // ---------- версии и обновления ----------
 function renderVersions(v) {

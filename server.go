@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"net/http"
 	"time"
@@ -90,6 +91,8 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("POST /api/session/register", a.guard(true, a.handleRegister))
 	mux.HandleFunc("POST /api/session/reset", a.guard(true, a.handleReset))
 	mux.HandleFunc("POST /api/session/renew", a.guard(true, a.handleRenew))
+	mux.HandleFunc("GET /api/session", a.guard(true, a.handleGetSession))
+	mux.HandleFunc("PUT /api/session", a.guard(true, a.handlePutSession))
 	mux.HandleFunc("GET /api/versions", a.guard(true, a.handleVersions))
 	mux.HandleFunc("POST /api/updates/check", a.guard(true, a.handleUpdatesCheck))
 	mux.HandleFunc("POST /api/updates/upgrade", a.guard(true, a.handleUpgrade))
@@ -286,4 +289,30 @@ func (a *App) handleUpgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, map[string]any{"ok": true, "output": out})
+}
+
+func (a *App) handleGetSession(w http.ResponseWriter, r *http.Request) {
+	v, err := readSessionView(a.paths.Session)
+	if err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, v)
+}
+
+func (a *App) handlePutSession(w http.ResponseWriter, r *http.Request) {
+	var in map[string]string
+	if err := decode(r, &in); err != nil {
+		writeErr(w, 400, "некорректный запрос")
+		return
+	}
+	if err := a.svc.EditSession(r.Context(), in); err != nil {
+		code := 400
+		if errors.Is(err, errBusy) {
+			code = 409
+		}
+		writeErr(w, code, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]bool{"ok": true})
 }

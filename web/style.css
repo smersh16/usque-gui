@@ -78,3 +78,10 @@ input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transpare
 .ver .tag.new { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
 .ver .tag.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 .ver code { font: 12.5px ui-monospace, Menlo, monospace; background: var(--line); padding: 1px 6px; border-radius: 4px; }
+
+textarea { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; color: var(--text); background: var(--input);
+  border: 1px solid var(--line); border-radius: 8px; font: 12.5px/1.4 ui-monospace, Menlo, monospace; resize: vertical; }
+textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); border-color: var(--accent); }
+.sess-edit { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.sess-edit summary { cursor: pointer; font-weight: 600; margin-bottom: 10px; }
+code { font: 12.5px ui-monospace, Menlo, monospace; background: var(--line); padding: 1px 6px; border-radius: 4px; }

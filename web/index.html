@@ -81,6 +81,29 @@
         <button id="btn-reset" class="danger">Сбросить сессию</button>
       </div>
       <p id="sess-hint" class="muted small"></p>
+      <details id="sess-edit" class="sess-edit">
+        <summary>Редактировать конфигурацию сессии</summary>
+        <form id="sess-form" autocomplete="off">
+          <p class="muted small">Секретные поля (private_key, access_token) скрыты: оставьте пустыми, чтобы не менять,
+            или введите новое значение. Перед записью делается копия <code>session.conf.gui-bak</code>.</p>
+          <div class="grid">
+            <label>endpoint_v4<input id="s-endpoint_v4" placeholder="162.159.198.2"></label>
+            <label>endpoint_v6<input id="s-endpoint_v6" placeholder="2606:4700:103::"></label>
+            <label>endpoint_h2_v4 <small>для HTTP/2</small><input id="s-endpoint_h2_v4"></label>
+            <label>endpoint_h2_v6 <small>для HTTP/2</small><input id="s-endpoint_h2_v6"></label>
+            <label>ipv4 <small>адрес, выданный аккаунту</small><input id="s-ipv4"></label>
+            <label>ipv6<input id="s-ipv6"></label>
+            <label>id <small>идентификатор устройства</small><input id="s-id"></label>
+            <label>access_token <small id="s-access_token-hint"></small><input id="s-access_token" type="password" autocomplete="new-password"></label>
+          </div>
+          <label>private_key (base64) <small id="s-private_key-hint"></small><input id="s-private_key" type="password" autocomplete="new-password"></label>
+          <label>endpoint_pub_key (PEM)<textarea id="s-endpoint_pub_key" rows="5" spellcheck="false"></textarea></label>
+          <div class="actions">
+            <button class="primary" type="submit">Сохранить сессию</button>
+            <span id="sess-msg" class="muted"></span>
+          </div>
+        </form>
+      </details>
       <p class="muted small">Файл сессии содержит ключи устройства и никогда не передаётся в браузер.</p>
     </section>
 
