@@ -38,6 +38,9 @@ type LinkInfo struct {
 	Up      bool   `json:"up"`
 	Running bool   `json:"running"`
 	Oper    string `json:"oper,omitempty"`
+	// Счётчики интерфейса (байты); по двум опросам GUI считает скорость.
+	RxBytes uint64 `json:"rxBytes"`
+	TxBytes uint64 `json:"txBytes"`
 }
 
 type NDMSInfo struct {
@@ -107,7 +110,18 @@ func linkInfo(iface string) LinkInfo {
 	if b, err := os.ReadFile(base + "/operstate"); err == nil {
 		li.Oper = strings.TrimSpace(string(b))
 	}
+	li.RxBytes = readCounter(base + "/statistics/rx_bytes")
+	li.TxBytes = readCounter(base + "/statistics/tx_bytes")
 	return li
+}
+
+func readCounter(path string) uint64 {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return 0
+	}
+	v, _ := strconv.ParseUint(strings.TrimSpace(string(b)), 10, 64)
+	return v
 }
 
 // ndmName: opkgtun0 -> OpkgTun0.

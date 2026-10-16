@@ -17,6 +17,8 @@ type App struct {
 	paths Paths
 	auth  *Auth
 	svc   *Service
+	// restart перезапускает процесс GUI (exec); nil — недоступно (тесты).
+	restart func()
 }
 
 func NewApp(p Paths, auth *Auth) *App {
@@ -93,6 +95,12 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("POST /api/session/renew", a.guard(true, a.handleRenew))
 	mux.HandleFunc("GET /api/session", a.guard(true, a.handleGetSession))
 	mux.HandleFunc("PUT /api/session", a.guard(true, a.handlePutSession))
+	mux.HandleFunc("POST /api/probe", a.guard(true, a.handleProbe))
+	mux.HandleFunc("POST /api/backup", a.guard(true, a.handleBackup))
+	mux.HandleFunc("POST /api/restore", a.guard(true, a.handleRestore))
+	mux.HandleFunc("GET /api/gui", a.guard(true, a.handleGetGUI))
+	mux.HandleFunc("PUT /api/gui", a.guard(true, a.handlePutGUI))
+	mux.HandleFunc("POST /api/gui/restart", a.guard(true, a.handleGUIRestart))
 	mux.HandleFunc("GET /api/versions", a.guard(true, a.handleVersions))
 	mux.HandleFunc("POST /api/updates/check", a.guard(true, a.handleUpdatesCheck))
 	mux.HandleFunc("POST /api/updates/upgrade", a.guard(true, a.handleUpgrade))

@@ -4,12 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>USQUE GUI</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top">
   <div class="brand"><span class="logo">◆</span> USQUE <small id="ver"></small></div>
-  <button id="logout" class="ghost" hidden>Выйти</button>
+  <div class="row">
+    <button id="lang" class="ghost" type="button" title="Language / Язык">EN</button>
+    <button id="logout" class="ghost" hidden data-i18n>Выйти</button>
+  </div>
 </header>
 
 <main>
@@ -18,9 +22,9 @@
     <h2 id="auth-title">Вход</h2>
     <p id="auth-hint" class="muted"></p>
     <form id="auth-form">
-      <label>Пароль<input id="auth-pass" type="password" autocomplete="current-password" required></label>
-      <label id="auth-pass2-wrap" hidden>Повторите пароль<input id="auth-pass2" type="password" autocomplete="new-password"></label>
-      <button class="primary" type="submit">Войти</button>
+      <label><span data-i18n>Пароль</span><input id="auth-pass" type="password" autocomplete="current-password" required></label>
+      <label id="auth-pass2-wrap" hidden><span data-i18n>Повторите пароль</span><input id="auth-pass2" type="password" autocomplete="new-password"></label>
+      <button id="auth-submit" class="primary" type="submit">Войти</button>
       <p id="auth-err" class="err" role="alert"></p>
     </form>
   </section>
@@ -29,108 +33,151 @@
   <div id="view-app" hidden>
     <section class="card">
       <div class="row spread">
-        <h2>Состояние</h2>
+        <h2 data-i18n>Состояние</h2>
         <span id="badge" class="badge">…</span>
       </div>
-      <div id="warn-restart" class="notice" hidden>Настройки изменены — перезапустите сервис, чтобы они вступили в силу.</div>
+      <div id="warn-restart" class="notice" hidden data-i18n>Настройки изменены — перезапустите сервис, чтобы они вступили в силу.</div>
       <div id="warn-missing" class="notice bad" hidden></div>
       <dl id="facts" class="facts"></dl>
       <div class="actions">
-        <button id="btn-start" class="primary">Запустить</button>
-        <button id="btn-stop">Остановить</button>
-        <button id="btn-restart">Перезапустить</button>
-        <button id="btn-check" class="ghost" title="Запрос к Cloudflare через интерфейс usque (экспериментально)">Проверить выход</button>
+        <button id="btn-start" class="primary" data-i18n>Запустить</button>
+        <button id="btn-stop" data-i18n>Остановить</button>
+        <button id="btn-restart" data-i18n>Перезапустить</button>
+        <button id="btn-check" class="ghost" data-i18n data-i18n-title title="Запрос к Cloudflare через интерфейс usque (экспериментально)">Проверить выход</button>
       </div>
       <p id="check-result" class="muted"></p>
     </section>
 
     <section class="card">
-      <h2>Настройки usque</h2>
+      <h2 data-i18n>Настройки usque</h2>
       <form id="cfg-form" autocomplete="off">
         <div class="grid">
-          <label>Интерфейс
+          <label><span data-i18n>Интерфейс</span>
             <input id="cfg-iface" placeholder="opkgtun0" pattern="opkgtun[0-9]{1,2}" required>
-            <small>должен начинаться с opkgtun</small>
+            <small data-i18n>должен начинаться с opkgtun</small>
           </label>
           <label>SNI
             <input id="cfg-sni" placeholder="ozon.ru">
-            <small>домен для маскировки трафика, можно пусто</small>
+            <small data-i18n>домен для маскировки трафика, можно пусто</small>
           </label>
-          <label>IP интерфейса
-            <input id="cfg-ip" placeholder="авто (172.16.1.100–200)">
-            <small>пусто — выбрать свободный автоматически</small>
+          <label><span data-i18n>IP интерфейса</span>
+            <input id="cfg-ip" placeholder="авто (172.16.1.100–200)" data-i18n-ph>
+            <small data-i18n>пусто — выбрать свободный автоматически</small>
           </label>
-          <label>Маска
+          <label><span data-i18n>Маска</span>
             <input id="cfg-mask" placeholder="255.255.255.255">
-            <small>пусто — 255.255.255.255</small>
+            <small data-i18n>пусто — 255.255.255.255</small>
           </label>
         </div>
-        <label class="check"><input id="cfg-http2" type="checkbox"> Использовать HTTP/2</label>
+        <label class="check"><input id="cfg-http2" type="checkbox"> <span data-i18n>Использовать HTTP/2</span></label>
         <div class="actions">
-          <button class="primary" type="submit">Сохранить</button>
+          <button class="primary" type="submit" data-i18n>Сохранить</button>
           <span id="cfg-msg" class="muted"></span>
         </div>
       </form>
     </section>
 
     <section class="card">
-      <h2>Аккаунт WARP</h2>
+      <h2 data-i18n>Аккаунт WARP</h2>
       <p id="sess-text" class="muted"></p>
       <div class="actions">
         <button id="btn-register">Зарегистрировать</button>
-        <button id="btn-reset" class="danger">Сбросить сессию</button>
+        <button id="btn-reset" class="danger" data-i18n>Сбросить сессию</button>
       </div>
       <p id="sess-hint" class="muted small"></p>
       <details id="sess-edit" class="sess-edit">
-        <summary>Редактировать конфигурацию сессии</summary>
+        <summary data-i18n>Редактировать конфигурацию сессии</summary>
         <form id="sess-form" autocomplete="off">
-          <p class="muted small">Секретные поля (private_key, access_token) скрыты: оставьте пустыми, чтобы не менять,
-            или введите новое значение. Перед записью делается копия <code>session.conf.gui-bak</code>.</p>
+          <p class="muted small"><span data-i18n>Секретные поля (private_key, access_token) скрыты: оставьте пустыми, чтобы не менять, или введите новое значение. Перед записью делается копия</span> <code>session.conf.gui-bak</code></p>
           <div class="grid">
             <label>endpoint_v4<input id="s-endpoint_v4" placeholder="162.159.198.2"></label>
             <label>endpoint_v6<input id="s-endpoint_v6" placeholder="2606:4700:103::"></label>
-            <label>endpoint_h2_v4 <small>для HTTP/2</small><input id="s-endpoint_h2_v4"></label>
-            <label>endpoint_h2_v6 <small>для HTTP/2</small><input id="s-endpoint_h2_v6"></label>
-            <label>ipv4 <small>адрес, выданный аккаунту</small><input id="s-ipv4"></label>
+            <label>endpoint_h2_v4 <small data-i18n>для HTTP/2</small><input id="s-endpoint_h2_v4"></label>
+            <label>endpoint_h2_v6 <small data-i18n>для HTTP/2</small><input id="s-endpoint_h2_v6"></label>
+            <label>ipv4 <small data-i18n>адрес, выданный аккаунту</small><input id="s-ipv4"></label>
             <label>ipv6<input id="s-ipv6"></label>
-            <label>id <small>идентификатор устройства</small><input id="s-id"></label>
-            <label>access_token <small id="s-access_token-hint"></small><input id="s-access_token" type="password" autocomplete="new-password"></label>
+            <label>id <small data-i18n>идентификатор устройства</small><input id="s-id"></label>
+            <label>access_token<input id="s-access_token" type="password" autocomplete="new-password"></label>
           </div>
-          <label>private_key (base64) <small id="s-private_key-hint"></small><input id="s-private_key" type="password" autocomplete="new-password"></label>
+          <label>private_key (base64)<input id="s-private_key" type="password" autocomplete="new-password"></label>
           <label>endpoint_pub_key (PEM)<textarea id="s-endpoint_pub_key" rows="5" spellcheck="false"></textarea></label>
           <div class="actions">
-            <button class="primary" type="submit">Сохранить сессию</button>
+            <button class="primary" type="submit" data-i18n>Сохранить сессию</button>
             <span id="sess-msg" class="muted"></span>
           </div>
         </form>
       </details>
-      <p class="muted small">Файл сессии содержит ключи устройства и никогда не передаётся в браузер.</p>
+      <p class="muted small" data-i18n>Файл сессии содержит ключи устройства; секретные значения никогда не передаются в браузер.</p>
+    </section>
+
+    <section id="card-probe" class="card" hidden>
+      <h2 data-i18n>Подбор endpoint</h2>
+      <p class="muted small" data-i18n>Проверка доступности адресов Cloudflare с роутера (TCP + TLS на порту 443). Адреса ниже — предположительные из диапазонов Cloudflare WARP, не гарантированные. usque работает по QUIC (UDP), поэтому замер ориентировочный: он показывает достижимость и задержку, но не гарантирует работу MASQUE. Замер идёт по обычному маршруту роутера.</p>
+      <label><span data-i18n>Адреса (по одному в строке, до 32)</span><textarea id="probe-list" rows="6" spellcheck="false"></textarea></label>
+      <div class="actions">
+        <button id="btn-probe" data-i18n>Проверить</button>
+        <label class="check inline-check"><input id="probe-h2" type="checkbox"> <span data-i18n>также для HTTP/2</span></label>
+        <span id="probe-msg" class="muted"></span>
+      </div>
+      <div id="probe-result" class="probe"></div>
     </section>
 
     <section class="card">
       <div class="row spread">
-        <h2>Версии и обновления</h2>
-        <button id="btn-upd-check" class="ghost">Проверить обновления</button>
+        <h2 data-i18n>Версии и обновления</h2>
+        <button id="btn-upd-check" class="ghost" data-i18n>Проверить обновления</button>
       </div>
       <div id="versions" class="vers"></div>
       <p id="upd-msg" class="muted small"></p>
     </section>
 
     <section class="card">
-      <div class="row spread">
-        <h2>Журнал действий</h2>
-        <button id="log-refresh" class="ghost">Обновить</button>
+      <h2 data-i18n>Резервная копия</h2>
+      <p class="muted small" data-i18n>Копия содержит настройки usque и, по желанию, сессию WARP. Файл с сессией содержит секретные ключи — храните его как пароль.</p>
+      <label class="check"><input id="bk-session" type="checkbox"> <span data-i18n>Включить сессию WARP (секретные ключи)</span></label>
+      <label><span data-i18n>Пароль интерфейса (нужен для копии и восстановления сессии)</span><input id="bk-pass" type="password" autocomplete="current-password"></label>
+      <div class="actions">
+        <button id="btn-backup" data-i18n>Скачать копию</button>
       </div>
-      <p class="muted small">У самого usque журнала нет (init-скрипт не сохраняет вывод), здесь — результаты действий из этого интерфейса.</p>
+      <hr>
+      <h3 data-i18n>Восстановление</h3>
+      <label><span data-i18n>Файл копии</span><input id="rs-file" type="file" accept="application/json,.json"></label>
+      <label class="check"><input id="rs-conf" type="checkbox" checked> <span data-i18n>Восстановить настройки usque</span></label>
+      <label class="check"><input id="rs-session" type="checkbox"> <span data-i18n>Восстановить сессию WARP</span></label>
+      <div class="actions">
+        <button id="btn-restore" class="danger" data-i18n>Восстановить</button>
+        <span id="bk-msg" class="muted"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row spread">
+        <h2 data-i18n>Журнал действий</h2>
+        <button id="log-refresh" class="ghost" data-i18n>Обновить журнал</button>
+      </div>
+      <p class="muted small" data-i18n>У самого usque журнала нет (init-скрипт не сохраняет вывод), здесь — результаты действий из этого интерфейса.</p>
       <div id="log" class="log"></div>
     </section>
 
     <section class="card">
-      <h2>Пароль интерфейса</h2>
+      <h2 data-i18n>Настройки интерфейса</h2>
+      <form id="gui-form" autocomplete="off">
+        <label><span data-i18n>Адрес и порт веб-интерфейса</span>
+          <input id="gui-listen" placeholder="0.0.0.0:2223">
+          <small data-i18n>0.0.0.0 — все интерфейсы; IP роутера — только эта сеть. Применяется после перезапуска интерфейса.</small>
+        </label>
+        <div class="actions">
+          <button type="submit" data-i18n>Сохранить</button>
+          <button id="btn-gui-restart" type="button" class="primary" hidden data-i18n>Перезапустить интерфейс</button>
+          <span id="gui-msg" class="muted"></span>
+        </div>
+      </form>
+      <hr>
+      <h3 data-i18n>Пароль интерфейса</h3>
       <form id="pw-form" class="inline" autocomplete="off">
-        <input id="pw-cur" type="password" placeholder="Текущий" autocomplete="current-password" required>
-        <input id="pw-new" type="password" placeholder="Новый (от 6 символов)" autocomplete="new-password" required>
-        <button type="submit">Сменить</button>
+        <input id="pw-cur" type="password" placeholder="Текущий" data-i18n-ph autocomplete="current-password" required>
+        <input id="pw-new" type="password" placeholder="Новый (от 6 символов)" data-i18n-ph autocomplete="new-password" required>
+        <button type="submit" data-i18n>Сменить</button>
         <span id="pw-msg" class="muted"></span>
       </form>
     </section>
@@ -138,6 +185,7 @@
 </main>
 
 <div id="toast" class="toast" hidden></div>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

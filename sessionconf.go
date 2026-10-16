@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -121,9 +122,21 @@ func validateSessionValue(f sessionField, v string) error {
 // секреты при пустом значении/маске остаются прежними, прочие ключи файла
 // сохраняются. Запись атомарная, права 0600, перед записью — копия .gui-bak.
 func writeSessionConf(path string, in map[string]string) error {
+	return writeSessionConfOpt(path, in, false)
+}
+
+// writeSessionConfOpt: create=true допускает отсутствие файла (восстановление
+// на чистой установке); тогда нужны все обязательные поля из in.
+func writeSessionConfOpt(path string, in map[string]string, create bool) error {
 	old, err := loadSessionRaw(path)
 	if err != nil {
-		return err
+		if !create || !os.IsNotExist(err) {
+			return err
+		}
+		old = map[string]any{}
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return err
+		}
 	}
 	next := map[string]any{}
 	for k, v := range old {

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -46,8 +47,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("настройки %s: %v", *cfgPath, err)
 	}
+	// -listen действует только на этот запуск и не попадает в gui.json.
+	addr := cfg.Listen
 	if *listen != "" {
-		cfg.Listen = *listen
+		addr = *listen
 	}
 	auth := NewAuth(*cfgPath, cfg)
 
@@ -58,9 +61,10 @@ func main() {
 		return
 	}
 
+	app := NewApp(p, auth)
 	srv := &http.Server{
-		Addr:              cfg.Listen,
-		Handler:           NewApp(p, auth).Handler(),
+		Addr:              addr,
+		Handler:           app.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      6 * time.Minute, // register/restart/opkg upgrade могут быть долгими
@@ -76,7 +80,26 @@ func main() {
 		_ = srv.Shutdown(sctx)
 	}()
 
-	log.Printf("usque-gui %s слушает %s", version, cfg.Listen)
+	app.restart = func() {
+		go func() {
+			time.Sleep(400 * time.Millisecond) // дать дописать ответ
+			sctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			_ = srv.Shutdown(sctx)
+			exe := os.Args[0]
+			if !filepath.IsAbs(exe) {
+				if e, err := os.Executable(); err == nil {
+					exe = strings.TrimSuffix(e, " (deleted)")
+				}
+			}
+			// exec в тот же PID: pid-файл init-скрипта остаётся верным.
+			if err := syscall.Exec(exe, os.Args, os.Environ()); err != nil {
+				log.Fatalf("перезапуск: %v", err)
+			}
+		}()
+	}
+
+	log.Printf("usque-gui %s слушает %s", version, addr)
 	if auth.NeedSetup() {
 		log.Printf("пароль не задан: откройте веб-интерфейс и задайте его (или: usque-gui passwd)")
 	}

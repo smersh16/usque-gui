@@ -85,3 +85,16 @@ textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transp
 .sess-edit { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 .sess-edit summary { cursor: pointer; font-weight: 600; margin-bottom: 10px; }
 code { font: 12.5px ui-monospace, Menlo, monospace; background: var(--line); padding: 1px 6px; border-radius: 4px; }
+
+h3 { margin: 4px 0 10px; font-size: 14px; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+.inline-check { margin: 0; font-size: 14px; }
+.probe table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+.probe th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 4px 8px; }
+.probe td { padding: 6px 8px; border-top: 1px solid var(--line); }
+.probe td:last-child { text-align: right; }
+.probe button { padding: 4px 10px; font-size: 13px; }
+.bad-text { color: var(--bad); }
+.row { flex-wrap: wrap; }
+#sess-form .grid label { display: flex; flex-direction: column; }
+#sess-form .grid label input { margin-top: auto; }

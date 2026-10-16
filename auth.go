@@ -213,3 +213,17 @@ func isLocalClient(ip net.IP) bool {
 	}
 	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast()
 }
+
+// Listen / SetListen — адрес прослушивания из gui.json.
+func (a *Auth) Listen() string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.cfg.Listen
+}
+
+func (a *Auth) SetListen(l string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.cfg.Listen = l
+	return saveGUIConfig(a.path, a.cfg)
+}
