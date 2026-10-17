@@ -179,9 +179,17 @@ func (a *App) handleRestore(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handleProbe(w http.ResponseWriter, r *http.Request) {
-	var in struct{ IPs []string }
+	var in struct {
+		IPs      []string
+		Mode     string
+		Attempts int
+	}
 	if err := decode(r, &in); err != nil {
 		writeErr(w, 400, "некорректный запрос")
+		return
+	}
+	if in.Mode != ModeQUIC && in.Mode != ModeH2 {
+		writeErr(w, 400, "неизвестный режим (quic или h2)")
 		return
 	}
 	ips, err := normalizeProbeIPs(in.IPs)
@@ -193,7 +201,11 @@ func (a *App) handleProbe(w http.ResponseWriter, r *http.Request) {
 	if c, err := readConf(a.paths.Conf); err == nil {
 		sni = c.SNI
 	}
-	writeJSON(w, 200, ProbeEndpoints(r.Context(), ips, sni, 3*time.Second))
+	timeout := 3 * time.Second
+	if in.Mode == ModeQUIC {
+		timeout = 2 * time.Second
+	}
+	writeJSON(w, 200, ProbeEndpoints(r.Context(), in.Mode, ips, sni, in.Attempts, timeout))
 }
 
 // validateListen: host:port, host — пусто или IP-литерал; порт 1–65535.

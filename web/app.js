@@ -333,49 +333,77 @@ $("sess-form").addEventListener("submit", async (ev) => {
 });
 
 // ---------- подбор endpoint ----------
-// Предположительные адреса из диапазонов Cloudflare WARP (не гарантированные).
-const PROBE_SUGGESTED = [
-  "162.159.198.2", "162.159.198.1", "162.159.192.1", "162.159.193.1", "162.159.195.1",
-  "188.114.96.1", "188.114.97.1", "188.114.98.1", "188.114.99.1", "2606:4700:103::",
-];
+// Настоящие MASQUE-endpoint'ы (см. docs warpscout):
+//   QUIC (UDP):  162.159.198.1, 162.159.198.2
+//   HTTP/2 (TCP): пулы 162.159.198.0/24 и 162.159.199.0/24
+const PROBE_QUIC = ["162.159.198.1", "162.159.198.2"];
+const PROBE_H2_POOLS = ["162.159.198", "162.159.199"];
 let probeInit = false;
+let lastProbeMode = "quic";
+let sessionEndpoints = {};
+
+function randomH2(n, exclude) {
+  const out = new Set(exclude);
+  const res = [];
+  let guard = 0;
+  while (res.length < n && guard++ < 1000) {
+    const ip = PROBE_H2_POOLS[Math.floor(Math.random() * PROBE_H2_POOLS.length)] + "." + (1 + Math.floor(Math.random() * 254));
+    if (!out.has(ip)) { out.add(ip); res.push(ip); }
+  }
+  return res;
+}
+
+function fillProbeList(forceRandom) {
+  const mode = $("probe-mode").value;
+  const curKey = mode === "h2" ? "endpoint_h2_v4" : "endpoint_v4";
+  const cur = sessionEndpoints[curKey] ? [sessionEndpoints[curKey]] : [];
+  let list;
+  if (mode === "quic") {
+    list = cur.concat(PROBE_QUIC.filter((x) => !cur.includes(x)));
+  } else {
+    const base = cur.concat(["162.159.198.2"].filter((x) => !cur.includes(x)));
+    list = base.concat(randomH2(forceRandom ? 15 : 12, base));
+  }
+  $("probe-list").value = list.join("\n");
+}
 
 async function initProbeList() {
   if (probeInit) return;
   probeInit = true;
   const v = await api("GET", "/api/session").catch(() => null);
-  const cur = [];
-  if (v && v.config) {
-    ["endpoint_v4", "endpoint_v6", "endpoint_h2_v4", "endpoint_h2_v6"].forEach((k) => {
-      if (v.config[k] && !cur.includes(v.config[k])) cur.push(v.config[k]);
-    });
-  }
-  const all = cur.concat(PROBE_SUGGESTED.filter((x) => !cur.includes(x)));
-  $("probe-list").value = all.join("\n");
+  sessionEndpoints = (v && v.config) || {};
+  const c = await api("GET", "/api/config").catch(() => null);
+  $("probe-mode").value = c && c.http2 ? "h2" : "quic";
+  fillProbeList(false);
 }
+
+$("probe-mode").addEventListener("change", () => fillProbeList(false));
+$("btn-probe-random").onclick = () => { $("probe-mode").value = "h2"; fillProbeList(true); };
 
 function renderProbe(results) {
   lastProbe = results;
   const box = $("probe-result");
   box.textContent = "";
   if (!results.length) return;
+  const isH2 = lastProbeMode === "h2";
   const table = document.createElement("table");
   const head = document.createElement("tr");
-  ["IP", t("Задержка"), t("TLS"), ""].forEach((h) => {
+  ["IP", t("Ответы"), t("Задержка")].concat(isH2 ? [t("TLS")] : []).concat([""]).forEach((h) => {
     const th = document.createElement("th");
     th.textContent = h;
     head.appendChild(th);
   });
   table.appendChild(head);
   results.forEach((r) => {
-    const tr_ = document.createElement("tr");
-    const ip = document.createElement("td");
-    ip.textContent = r.ip;
-    const rtt = document.createElement("td");
-    rtt.textContent = r.ok ? r.rttMs.toFixed(1) + " ms" : tr(r.error || "");
-    if (!r.ok) rtt.className = "bad-text";
-    const tls = document.createElement("td");
-    tls.textContent = r.ok ? (r.tls ? t("да") : t("нет")) : "—";
+    const row = document.createElement("tr");
+    const cells = [r.ip, r.success + "/" + r.attempts, r.ok ? r.rttMs.toFixed(1) + " ms" : tr(r.error || "")];
+    if (isH2) cells.push(r.ok ? (r.tls ? t("да") : t("нет")) : "—");
+    cells.forEach((c, i) => {
+      const td = document.createElement("td");
+      td.textContent = c;
+      if (!r.ok && i === 2) td.className = "bad-text";
+      row.appendChild(td);
+    });
     const act_ = document.createElement("td");
     if (r.ok) {
       const b = document.createElement("button");
@@ -383,21 +411,20 @@ function renderProbe(results) {
       b.onclick = () => applyEndpoint(r.ip);
       act_.appendChild(b);
     }
-    tr_.append(ip, rtt, tls, act_);
-    table.appendChild(tr_);
+    row.appendChild(act_);
+    table.appendChild(row);
   });
   box.appendChild(table);
 }
 
 async function applyEndpoint(ip) {
   const v6 = ip.includes(":");
-  const fields = [v6 ? "endpoint_v6" : "endpoint_v4"];
-  if ($("probe-h2").checked) fields.push(v6 ? "endpoint_h2_v6" : "endpoint_h2_v4");
+  const field = (lastProbeMode === "h2" ? "endpoint_h2_" : "endpoint_") + (v6 ? "v6" : "v4");
   const det = $("sess-edit");
   if (!det.open) { skipNextToggleLoad = true; det.open = true; }
   await loadSession();
-  fields.forEach((k) => { $("s-" + k).value = ip; });
-  toast(t("Значение подставлено в форму сессии — проверьте и нажмите «Сохранить сессию»."));
+  $("s-" + field).value = ip;
+  toast(t("Значение подставлено в поле {field} формы сессии — проверьте и нажмите «Сохранить сессию».", { field }));
   det.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -406,8 +433,10 @@ $("btn-probe").onclick = async () => {
   const b = $("btn-probe");
   b.disabled = true;
   $("probe-msg").textContent = t("Проверяю адреса…");
+  const mode = $("probe-mode").value;
   try {
-    const res = await api("POST", "/api/probe", { ips });
+    const res = await api("POST", "/api/probe", { ips, mode, attempts: +$("probe-tries").value });
+    lastProbeMode = mode;
     renderProbe(res);
     $("probe-msg").textContent = res.some((r) => r.ok) ? "" : t("Нет ответивших адресов");
   } catch (e) { $("probe-msg").textContent = e.message; }

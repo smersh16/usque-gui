@@ -112,11 +112,23 @@
 
     <section id="card-probe" class="card" hidden>
       <h2 data-i18n>Подбор endpoint</h2>
-      <p class="muted small" data-i18n>Проверка доступности адресов Cloudflare с роутера (TCP + TLS на порту 443). Адреса ниже — предположительные из диапазонов Cloudflare WARP, не гарантированные. usque работает по QUIC (UDP), поэтому замер ориентировочный: он показывает достижимость и задержку, но не гарантирует работу MASQUE. Замер идёт по обычному маршруту роутера.</p>
+      <p class="muted small" data-i18n>Проверка адресов Cloudflare с роутера по схеме warpscout. QUIC (UDP, режим usque по умолчанию): на адрес уходит QUIC-пакет с неизвестной версией, ответ Version Negotiation означает, что там работает QUIC-сервер (адреса 162.159.198.1 и 162.159.198.2). HTTP/2 (TCP): TCP + TLS на порту 443 (пулы 162.159.198.0/24 и 162.159.199.0/24). Endpoint'ы нестабильны, поэтому каждый проверяется несколько раз.</p>
+      <p class="muted small" data-i18n>Замер подтверждает достижимость и задержку, но не работу MASQUE-аккаунта. usque-keenetic запускает usque без -6, поэтому используются только IPv4-адреса. Замер идёт по обычному маршруту роутера.</p>
+      <div class="grid">
+        <label><span data-i18n>Режим</span>
+          <select id="probe-mode">
+            <option value="quic">QUIC (UDP) → endpoint_v4</option>
+            <option value="h2">HTTP/2 (TCP) → endpoint_h2_v4</option>
+          </select>
+        </label>
+        <label><span data-i18n>Попыток на адрес</span>
+          <select id="probe-tries"><option value="3">3</option><option value="5">5</option><option value="10">10</option></select>
+        </label>
+      </div>
       <label><span data-i18n>Адреса (по одному в строке, до 32)</span><textarea id="probe-list" rows="6" spellcheck="false"></textarea></label>
       <div class="actions">
         <button id="btn-probe" data-i18n>Проверить</button>
-        <label class="check inline-check"><input id="probe-h2" type="checkbox"> <span data-i18n>также для HTTP/2</span></label>
+        <button id="btn-probe-random" class="ghost" data-i18n>Случайные из пулов HTTP/2</button>
         <span id="probe-msg" class="muted"></span>
       </div>
       <div id="probe-result" class="probe"></div>
