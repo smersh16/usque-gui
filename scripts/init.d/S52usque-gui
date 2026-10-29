@@ -4,7 +4,10 @@
 PATH=/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 NAME="usque-gui"
-BIN="/opt/usr/bin/usque-gui"
+# Важно: не /opt/usr/bin/usque-gui. Init-скрипт usque-keenetic ищет свой процесс через
+# pgrep -nf "/opt/usr/bin/usque", и командная строка usque-gui с таким префиксом
+# принималась бы за usque (ломались статус, stop, restart).
+BIN="/opt/sbin/usque-gui"
 PIDFILE="/opt/var/run/usque-gui.pid"
 LOGFILE="/opt/var/log/usque-gui.log"
 

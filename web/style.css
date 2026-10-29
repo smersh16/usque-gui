@@ -101,3 +101,4 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
 select { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; font: inherit; font-size: 15px;
   color: var(--text); background: var(--input); border: 1px solid var(--line); border-radius: 8px; }
 select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); border-color: var(--accent); }
+[hidden] { display: none !important; }

@@ -1,5 +1,6 @@
 #!/bin/sh
 INIT="/opt/etc/init.d/S52usque-gui"
+rm -f /opt/usr/bin/usque-gui # старое расположение (до 0.5.1)
 mkdir -p /opt/etc/usque-gui
 chmod 700 /opt/etc/usque-gui
 [ -x "$INIT" ] && "$INIT" restart

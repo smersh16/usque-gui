@@ -18,12 +18,12 @@ WORK="$OUT/build/$PKG_ARCH"
 FILE="${NAME}_${VERSION}_${PKG_ARCH}.ipk"
 
 rm -rf "$WORK"
-mkdir -p "$WORK/control" "$WORK/data/opt/usr/bin" "$WORK/data/opt/etc/init.d" "$OUT/pkg"
+mkdir -p "$WORK/control" "$WORK/data/opt/sbin" "$WORK/data/opt/etc/init.d" "$OUT/pkg"
 
 echo "go build ($GOARCH_T)..."
 GOOS=linux GOARCH="$GOARCH_T" GOMIPS="$GOMIPS_T" CGO_ENABLED=0 \
     go build -trimpath -ldflags "-s -w -X main.version=$VERSION" \
-    -o "$WORK/data/opt/usr/bin/$NAME" .
+    -o "$WORK/data/opt/sbin/$NAME" .
 
 install -m 0755 scripts/init.d/S52usque-gui "$WORK/data/opt/etc/init.d/S52usque-gui"
 
